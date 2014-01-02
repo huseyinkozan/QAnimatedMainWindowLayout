@@ -18,7 +18,7 @@ public:
     explicit QAnimatedMainWindowLayoutPrivate(QAnimatedMainWindowLayout * p);
     virtual ~QAnimatedMainWindowLayoutPrivate();
 
-    void setGeometry(const QRect & adjustedGeo);
+    void setGeometry(const QRect & rect);
 
     void deleteAll();
 
@@ -38,6 +38,9 @@ public:
 
     void setAnimationDuration(uint duration, QAnimatedMainWindowLayout::LayoutAreas area);
     int animationDuration(QAnimatedMainWindowLayout::LayoutAreas area);
+
+    void setZOrder(int z, QAnimatedMainWindowLayout::LayoutAreas area);
+    int zOrder(QAnimatedMainWindowLayout::LayoutAreas area) const;
 
     QLayoutItem *itemAt(int i) const;
     QLayoutItem *takeAt(int i);
@@ -84,6 +87,7 @@ private:
     int m_spacing[QAnimatedMainWindowLayout::LayoutAreasMax];
     int m_hiddenStateStretch[QAnimatedMainWindowLayout::LayoutAreasMax];
     int m_stretch[QAnimatedMainWindowLayout::LayoutAreasMax];
+    int m_zOrder[QAnimatedMainWindowLayout::LayoutAreasMax];
 
     uint m_duration[QAnimatedMainWindowLayout::LayoutAreasMax];
     QEasingCurve m_easingCurves[QAnimatedMainWindowLayout::LayoutAreasMax];
@@ -91,8 +95,9 @@ private:
     QSize m_hintSizeCache;
     QSize m_minimumSizeCache;
 
-    QWidgetItem * itemAt(QAnimatedMainWindowLayout::LayoutAreas area) const;
+    Wrapper * wrapperAt(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper*> list) const;
     QSize calcSize(int * w, int * h, size_t sz) const;
+    QRect geometryOf(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper*> list, const QRect &rect, const QRect &adjustedRect);
 };
 
 #endif // QANIMATEDMAINWINDOWLAYOUT_P_H

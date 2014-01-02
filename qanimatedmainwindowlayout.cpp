@@ -79,6 +79,18 @@ uint QAnimatedMainWindowLayout::animationDuration(
     return m_private->animationDuration(area);
 }
 
+void QAnimatedMainWindowLayout::setZOrder(
+        int z, QAnimatedMainWindowLayout::LayoutAreas area)
+{
+    m_private->setZOrder(z, area);
+}
+
+int QAnimatedMainWindowLayout::zOrder(
+        QAnimatedMainWindowLayout::LayoutAreas area) const
+{
+    return m_private->zOrder(area);
+}
+
 void QAnimatedMainWindowLayout::addItem(
         QLayoutItem *)
 {
@@ -116,9 +128,7 @@ void QAnimatedMainWindowLayout::setGeometry(
         const QRect & rect)
 {
     if (m_private->isDirty() || rect != geometry()) {
-        int lm, tm, rm, bm;
-        getContentsMargins(&lm, &tm, &rm, &bm);
-        m_private->setGeometry(rect.adjusted(lm, tm, -rm, -bm));
+        m_private->setGeometry(rect);
         QLayout::setGeometry(rect);
     }
 }

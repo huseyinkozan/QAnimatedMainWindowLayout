@@ -43,6 +43,9 @@ public:
     void setAnimationDuration(uint duration, LayoutAreas area);
     uint animationDuration(LayoutAreas area);
 
+    void setZOrder(int z, LayoutAreas area);
+    int zOrder(LayoutAreas area) const;
+
     // QLayout interface
 public:
     virtual void addItem(QLayoutItem *);
