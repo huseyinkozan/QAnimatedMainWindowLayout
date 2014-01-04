@@ -22,25 +22,19 @@ public:
 
     void deleteAll();
 
-    void addItem(QWidgetItem * item, QAnimatedMainWindowLayout::LayoutAreas area, bool hidden);
-
-    void setSpacing(int space, QAnimatedMainWindowLayout::LayoutAreas area);
-    int spacing(QAnimatedMainWindowLayout::LayoutAreas area) const;
-
-    void setHiddenStateStrecth(int stretch, QAnimatedMainWindowLayout::LayoutAreas area);
-    qreal hiddenStateStrecth(QAnimatedMainWindowLayout::LayoutAreas area) const;
+    void addItem(QWidget *widget, QAnimatedMainWindowLayout::LayoutAreas area);
 
     void setStrecth(int stretch, QAnimatedMainWindowLayout::LayoutAreas area);
+    void setSpacing(int space);
+    void setAnimationEnabled(bool enabled);
+    void setAnimationDuration(uint duration);
+    void setEasingCurve(const QEasingCurve &easing);
+
     int strecth(QAnimatedMainWindowLayout::LayoutAreas area) const;
-
-    void setEasingCurve(const QEasingCurve &easing, QAnimatedMainWindowLayout::LayoutAreas area);
-    QEasingCurve easingCurve(QAnimatedMainWindowLayout::LayoutAreas area) const;
-
-    void setAnimationDuration(uint duration, QAnimatedMainWindowLayout::LayoutAreas area);
-    int animationDuration(QAnimatedMainWindowLayout::LayoutAreas area);
-
-    void setZOrder(int z, QAnimatedMainWindowLayout::LayoutAreas area);
-    int zOrder(QAnimatedMainWindowLayout::LayoutAreas area) const;
+    int spacing() const;
+    bool isAnimationEnabled() const;
+    const QEasingCurve & easingCurve() const;
+    int animationDuration();
 
     QLayoutItem *itemAt(int i) const;
     QLayoutItem *takeAt(int i);
@@ -51,31 +45,18 @@ public:
     void setDirty();
     bool isDirty() const;
 
-signals:
-    void allAnimationsFinished();
-    void showAnimationFinished(QAnimatedMainWindowLayout::LayoutAreas area);
-    void hideAnimationFinished(QAnimatedMainWindowLayout::LayoutAreas area);
-
-
-public slots:
-    void showAll();
-    void hideAll();
-    void show(QAnimatedMainWindowLayout::LayoutAreas area);
-    void hide(QAnimatedMainWindowLayout::LayoutAreas area);
-
 private:
     friend class QAnimatedMainWindowLayout;
     QAnimatedMainWindowLayout * m_public;
 
     struct Wrapper
     {
-        Wrapper(QWidgetItem * i,QAnimatedMainWindowLayout::LayoutAreas a,bool h)
-            { item = i; area = a; isHidden = h;}
+        Wrapper(QWidget * w,QAnimatedMainWindowLayout::LayoutAreas a)
+            { item = new QWidgetItem(w); area = a;}
         ~Wrapper()
             { if (item) delete item; }
         QWidgetItem * item;
         QAnimatedMainWindowLayout::LayoutAreas area;
-        bool isHidden;
     };
     QList<Wrapper*> m_list;
 
@@ -83,21 +64,21 @@ private:
     bool m_hintSizeNeedRecalc;
     bool m_minimumSizeNeedRecalc;
     bool m_animating;
+    bool m_isAnimationEnabled;
 
-    int m_spacing[QAnimatedMainWindowLayout::LayoutAreasMax];
-    int m_hiddenStateStretch[QAnimatedMainWindowLayout::LayoutAreasMax];
     int m_stretch[QAnimatedMainWindowLayout::LayoutAreasMax];
-    int m_zOrder[QAnimatedMainWindowLayout::LayoutAreasMax];
 
-    uint m_duration[QAnimatedMainWindowLayout::LayoutAreasMax];
-    QEasingCurve m_easingCurves[QAnimatedMainWindowLayout::LayoutAreasMax];
+    int m_spacing;
+    uint m_duration;
+    QEasingCurve m_easingCurves;
 
     QSize m_hintSizeCache;
     QSize m_minimumSizeCache;
 
     Wrapper * wrapperAt(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper*> list) const;
     QSize calcSize(int * w, int * h, size_t sz) const;
-    QRect geometryOf(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper*> list, const QRect &rect, const QRect &adjustedRect);
+    QRect geometryOf(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper*> list, const QRect &rect);
+    void setupPropertyAnimation();
 };
 
 #endif // QANIMATEDMAINWINDOWLAYOUT_P_H

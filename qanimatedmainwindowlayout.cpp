@@ -12,83 +12,129 @@ QAnimatedMainWindowLayout::~QAnimatedMainWindowLayout()
 {
 }
 
-void QAnimatedMainWindowLayout::addWidget(
-        QWidgetItem *item, QAnimatedMainWindowLayout::LayoutAreas area,
-        bool hidden)
+void QAnimatedMainWindowLayout::addLeftWidget(QWidget *item)
 {
-    m_private->addItem(item, area, hidden);
+    m_private->addItem(item, LeftLayoutArea);
 }
 
-void QAnimatedMainWindowLayout::setSpacing(
-        int space, QAnimatedMainWindowLayout::LayoutAreas area)
+void QAnimatedMainWindowLayout::addRightWidget(QWidget *item)
 {
-    m_private->setSpacing(space, area);
+    m_private->addItem(item, RightLayoutArea);
 }
 
-int QAnimatedMainWindowLayout::spacing(
-        QAnimatedMainWindowLayout::LayoutAreas area) const
+void QAnimatedMainWindowLayout::addTopWidget(QWidget *item)
 {
-    return m_private->spacing(area);
+    m_private->addItem(item, TopLayoutArea);
 }
 
-void QAnimatedMainWindowLayout::setHiddenStateStrecth(
-        int stretch, LayoutAreas area)
+void QAnimatedMainWindowLayout::addBottomWidget(QWidget *item)
 {
-    m_private->setHiddenStateStrecth(stretch, area);
+    m_private->addItem(item, BottomLayoutArea);
 }
 
-int QAnimatedMainWindowLayout::hiddenStateStretch(
-        LayoutAreas area) const
+void QAnimatedMainWindowLayout::addCenterWidget(QWidget *item)
 {
-    return m_private->hiddenStateStrecth(area);
+    m_private->addItem(item, CenterLayoutArea);
 }
 
-void QAnimatedMainWindowLayout::setStrecth(
-        int stretch, QAnimatedMainWindowLayout::LayoutAreas area)
+void QAnimatedMainWindowLayout::addWidget(QWidget *item, QAnimatedMainWindowLayout::LayoutAreas area)
 {
-    m_private->setStrecth(stretch, area);
+    m_private->addItem(item, area);
 }
 
-int QAnimatedMainWindowLayout::stretch(
-        QAnimatedMainWindowLayout::LayoutAreas area) const
+void QAnimatedMainWindowLayout::setLeftStretch(int stretch)
 {
-    return m_private->strecth(area);
+    m_private->setStrecth(stretch, LeftLayoutArea);
 }
 
-void QAnimatedMainWindowLayout::setEasingCurve(
-        const QEasingCurve &easing, QAnimatedMainWindowLayout::LayoutAreas area)
+void QAnimatedMainWindowLayout::setRightStretch(int stretch)
 {
-    m_private->setEasingCurve(easing, area);
+    m_private->setStrecth(stretch, RightLayoutArea);
+
 }
 
-QEasingCurve QAnimatedMainWindowLayout::easingCurve(
-        QAnimatedMainWindowLayout::LayoutAreas area) const
+void QAnimatedMainWindowLayout::setTopStretch(int stretch)
 {
-    return m_private->easingCurve(area);
+    m_private->setStrecth(stretch, TopLayoutArea);
+
 }
 
-void QAnimatedMainWindowLayout::setAnimationDuration(
-        uint duration, QAnimatedMainWindowLayout::LayoutAreas area)
+void QAnimatedMainWindowLayout::setBottomStretch(int stretch)
 {
-    m_private->setAnimationDuration(duration, area);
+    m_private->setStrecth(stretch, BottomLayoutArea);
+
 }
 
-uint QAnimatedMainWindowLayout::animationDuration(
-        QAnimatedMainWindowLayout::LayoutAreas area)
+void QAnimatedMainWindowLayout::setCenterStretch(int stretch)
 {
-    return m_private->animationDuration(area);
+    m_private->setStrecth(stretch, CenterLayoutArea);
+
 }
 
-void QAnimatedMainWindowLayout::setZOrder(
-        int z, QAnimatedMainWindowLayout::LayoutAreas area)
+
+void QAnimatedMainWindowLayout::setSpacing(int space)
 {
-    m_private->setZOrder(z, area);
+    m_private->setSpacing(space);
 }
 
-int QAnimatedMainWindowLayout::zOrder(
-        QAnimatedMainWindowLayout::LayoutAreas area) const
+void QAnimatedMainWindowLayout::setAnimationEnabled(bool enabled)
 {
-    return m_private->zOrder(area);
+    m_private->setAnimationEnabled(enabled);
+}
+
+void QAnimatedMainWindowLayout::setAnimationDuration(uint duration)
+{
+    m_private->setAnimationDuration(duration);
+}
+
+void QAnimatedMainWindowLayout::setEasingCurve(const QEasingCurve &easing)
+{
+    m_private->setEasingCurve(easing);
+}
+
+int QAnimatedMainWindowLayout::leftStretch() const
+{
+    m_private->strecth(LeftLayoutArea);
+}
+
+int QAnimatedMainWindowLayout::rightStretch() const
+{
+    m_private->strecth(RightLayoutArea);
+}
+
+int QAnimatedMainWindowLayout::topStretch() const
+{
+    m_private->strecth(TopLayoutArea);
+}
+
+int QAnimatedMainWindowLayout::bottomStretch() const
+{
+    m_private->strecth(BottomLayoutArea);
+}
+
+int QAnimatedMainWindowLayout::centerStretch() const
+{
+    m_private->strecth(CenterLayoutArea);
+}
+
+int QAnimatedMainWindowLayout::spacing() const
+{
+    return m_private->spacing();
+}
+
+bool QAnimatedMainWindowLayout::isAnimationEnabled() const
+{
+    return m_private->isAnimationEnabled();
+}
+
+uint QAnimatedMainWindowLayout::animationDuration() const
+{
+    return m_private->animationDuration();
+}
+
+const QEasingCurve &QAnimatedMainWindowLayout::easingCurve() const
+{
+    return m_private->easingCurve();
 }
 
 void QAnimatedMainWindowLayout::addItem(
@@ -149,24 +195,3 @@ void QAnimatedMainWindowLayout::invalidate()
     QLayout::invalidate();
 }
 
-void QAnimatedMainWindowLayout::showAll()
-{
-    m_private->showAll();
-}
-
-void QAnimatedMainWindowLayout::hideAll()
-{
-    m_private->hideAll();
-}
-
-void QAnimatedMainWindowLayout::show(
-        QAnimatedMainWindowLayout::LayoutAreas area)
-{
-    m_private->show(area);
-}
-
-void QAnimatedMainWindowLayout::hide(
-        QAnimatedMainWindowLayout::LayoutAreas area)
-{
-    m_private->hide(area);
-}
