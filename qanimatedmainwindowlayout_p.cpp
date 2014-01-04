@@ -1,4 +1,8 @@
 #include "qanimatedmainwindowlayout_p.h"
+#include <QWidget>
+#include <QPropertyAnimation>
+#include <QParallelAnimationGroup>
+
 
 
 QAnimatedMainWindowLayoutPrivate::QAnimatedMainWindowLayoutPrivate(
@@ -9,12 +13,14 @@ QAnimatedMainWindowLayoutPrivate::QAnimatedMainWindowLayoutPrivate(
     , m_hintSizeNeedRecalc(true)
     , m_minimumSizeNeedRecalc(true)
     , m_animating(false)
+    , m_isAnimationEnabled(true)
     , m_spacing(10)
     , m_duration(250)
 {
     for (int i = 0; i < QAnimatedMainWindowLayout::LayoutAreasMax; ++i) {
         m_stretch[i] = 0;
     }
+    m_stretch[QAnimatedMainWindowLayout::CenterLayoutArea] = 1;
 }
 
 QAnimatedMainWindowLayoutPrivate::~QAnimatedMainWindowLayoutPrivate()
@@ -35,7 +41,8 @@ void QAnimatedMainWindowLayoutPrivate::setGeometry(const QRect &rect)
 
     for (int i = 0; i < m_list.size(); ++i) {
         Wrapper * wr = m_list.at(i);
-        wr->item->setGeometry(geometryOf(wr->area, m_list, adjustedRect));
+        wr->item->setGeometry(
+                    geometryOf(wr->area, adjustedRect, m_stretch));
     }
 }
 
@@ -57,13 +64,15 @@ void QAnimatedMainWindowLayoutPrivate::addItem(
 void QAnimatedMainWindowLayoutPrivate::setStrecth(
         int stretch, QAnimatedMainWindowLayout::LayoutAreas area)
 {
+    if (m_stretch[area] == stretch)
+        return;
+    int oldStretch = m_stretch[area];
     m_stretch[area] = stretch;
     if (m_isAnimationEnabled) {
-        setupPropertyAnimation();
+        setupPropertyAnimation(oldStretch, stretch, area);
+        return;
     }
-    else {
-        m_public->invalidate();
-    }
+    m_public->invalidate();
 }
 
 void QAnimatedMainWindowLayoutPrivate::setSpacing(int space)
@@ -195,6 +204,12 @@ bool QAnimatedMainWindowLayoutPrivate::isDirty() const
     return m_dirty;
 }
 
+void QAnimatedMainWindowLayoutPrivate::animationFinished()
+{
+    m_animating = false;
+    m_public->invalidate();
+}
+
 
 QAnimatedMainWindowLayoutPrivate::Wrapper *QAnimatedMainWindowLayoutPrivate::wrapperAt(
         QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper *> list) const
@@ -236,25 +251,24 @@ QSize QAnimatedMainWindowLayoutPrivate::calcSize(int *w, int *h, size_t sz) cons
     return QSize(lw + cw + rw + ws, lh + hs);
 }
 
-QRect QAnimatedMainWindowLayoutPrivate::geometryOf(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper *> list
-        , const QRect & rect)
+QRect QAnimatedMainWindowLayoutPrivate::geometryOf(
+        QAnimatedMainWindowLayout::LayoutAreas area,
+        const QRect & rect, int * stretch)
 {
-    Wrapper * wr = wrapperAt(area, list);
+    Wrapper * wr = wrapperAt(area, m_list);
     if (wr == NULL)
         return QRect();
 
-    // TODO : review
-    // TODO : edge widgets must move if stretch size is less then minimumSize()
-
     QRect r = rect;
+    QSize minSize = wr->item->minimumSize();
     int totalVerticalStretch =
-            m_stretch[QAnimatedMainWindowLayout::TopLayoutArea]
-            + m_stretch[QAnimatedMainWindowLayout::CenterLayoutArea]
-            + m_stretch[QAnimatedMainWindowLayout::BottomLayoutArea];
+            stretch[QAnimatedMainWindowLayout::TopLayoutArea]
+            + stretch[QAnimatedMainWindowLayout::CenterLayoutArea]
+            + stretch[QAnimatedMainWindowLayout::BottomLayoutArea];
     int totalHorizontalStretch =
-            m_stretch[QAnimatedMainWindowLayout::LeftLayoutArea]
-            + m_stretch[QAnimatedMainWindowLayout::CenterLayoutArea]
-            + m_stretch[QAnimatedMainWindowLayout::RightLayoutArea];
+            stretch[QAnimatedMainWindowLayout::LeftLayoutArea]
+            + stretch[QAnimatedMainWindowLayout::CenterLayoutArea]
+            + stretch[QAnimatedMainWindowLayout::RightLayoutArea];
 
     if (totalHorizontalStretch == 0)
         totalHorizontalStretch = 1;
@@ -265,37 +279,89 @@ QRect QAnimatedMainWindowLayoutPrivate::geometryOf(QAnimatedMainWindowLayout::La
     qreal verticalPercentage = r.height() / totalVerticalStretch;
 
     if (area == QAnimatedMainWindowLayout::LeftLayoutArea) {
-        r.setRight(r.left() + (horizontalPercentage * m_stretch[area]) - m_spacing);
+        r.setRight(r.left() + (horizontalPercentage * stretch[area]) - m_spacing);
+        if (r.width() < minSize.width()) {
+            int right = r.x() + r.width();
+            r.setWidth(minSize.width());
+            r.translate(-(r.right() - right), 0);
+        }
     }
     else if (area == QAnimatedMainWindowLayout::RightLayoutArea) {
-        r.setLeft(r.right() - (horizontalPercentage * m_stretch[area]) + m_spacing);
+        r.setLeft(r.right() - (horizontalPercentage * stretch[area]) + m_spacing);
+        if (r.width() < minSize.width()) {
+            r.setWidth(minSize.width());
+        }
     }
     else if (area == QAnimatedMainWindowLayout::TopLayoutArea) {
-        r.setBottom(r.top() + (verticalPercentage * m_stretch[area]) - m_spacing);
+        r.setBottom(r.top() + (verticalPercentage * stretch[area]) - m_spacing);
+        if (r.height() < minSize.height()) {
+            int bottom = r.y() + r.height();
+            r.setHeight(minSize.height());
+            r.translate(0, -(r.bottom() - bottom));
+        }
     }
     else if (area == QAnimatedMainWindowLayout::BottomLayoutArea) {
-        r.setTop(r.bottom() - (verticalPercentage * m_stretch[area]) + m_spacing);
+        r.setTop(r.bottom() - (verticalPercentage * stretch[area]) + m_spacing);
+        if (r.height() < minSize.height()) {
+            r.setHeight(minSize.height());
+        }
     }
     else if (area == QAnimatedMainWindowLayout::CenterLayoutArea) {
         // note: no need to add spacing; if no left, no spacing, and if left, left will add spacing
-        r.setLeft(r.left() + (horizontalPercentage * m_stretch[QAnimatedMainWindowLayout::LeftLayoutArea]));
-        r.setRight(r.right() - (horizontalPercentage * m_stretch[QAnimatedMainWindowLayout::RightLayoutArea]));
-        r.setTop(r.top() + (verticalPercentage * m_stretch[QAnimatedMainWindowLayout::TopLayoutArea]));
-        r.setBottom(r.bottom() - (verticalPercentage * m_stretch[QAnimatedMainWindowLayout::BottomLayoutArea]));
+        r.setLeft(r.left() + (horizontalPercentage * stretch[QAnimatedMainWindowLayout::LeftLayoutArea]));
+        r.setRight(r.right() - (horizontalPercentage * stretch[QAnimatedMainWindowLayout::RightLayoutArea]));
+        r.setTop(r.top() + (verticalPercentage * stretch[QAnimatedMainWindowLayout::TopLayoutArea]));
+        r.setBottom(r.bottom() - (verticalPercentage * stretch[QAnimatedMainWindowLayout::BottomLayoutArea]));
     }
 
     if (area == QAnimatedMainWindowLayout::TopLayoutArea
             || area == QAnimatedMainWindowLayout::BottomLayoutArea) {
         // narrow horizotally
-        r.setLeft(r.left() + (horizontalPercentage * m_stretch[QAnimatedMainWindowLayout::LeftLayoutArea]));
-        r.setRight(r.right() - (horizontalPercentage * m_stretch[QAnimatedMainWindowLayout::RightLayoutArea]));
+        r.setLeft(r.left() + (horizontalPercentage * stretch[QAnimatedMainWindowLayout::LeftLayoutArea]));
+        r.setRight(r.right() - (horizontalPercentage * stretch[QAnimatedMainWindowLayout::RightLayoutArea]));
     }
     return r;
 }
 
-void QAnimatedMainWindowLayoutPrivate::setupPropertyAnimation()
+void QAnimatedMainWindowLayoutPrivate::setupPropertyAnimation(
+        int oldStretch, int newStretch, QAnimatedMainWindowLayout::LayoutAreas area)
 {
-    // TODO fill
+    if (oldStretch == newStretch)
+        return;
+
+//    int oldStretchs[QAnimatedMainWindowLayout::LayoutAreasMax];
+    int newStretchs[QAnimatedMainWindowLayout::LayoutAreasMax];
+    for (int i = 0; i < QAnimatedMainWindowLayout::LayoutAreasMax; ++i) {
+//        oldStretchs[i] = m_stretch[i];
+        newStretchs[i] = m_stretch[i];
+    }
+//    oldStretchs[area] = oldStretch;
+    newStretchs[area] = newStretch;
+
+    int lm, tm, rm, bm;
+    m_public->getContentsMargins(&lm, &tm, &rm, &bm);
+    QRect adjustedRect = m_public->geometry().adjusted(lm, tm, -rm, -bm);
+
+    QParallelAnimationGroup * animationGroup = new QParallelAnimationGroup;
+
+    for (int i = 0; i < QAnimatedMainWindowLayout::LayoutAreasMax; ++i) {
+        Wrapper * wr = wrapperAt((QAnimatedMainWindowLayout::LayoutAreas) i, m_list);
+        if (wr == NULL)
+            continue;
+        QWidget * w = wr->item->widget();
+        QPropertyAnimation * animation = new QPropertyAnimation(w, "geometry");
+        animation->setEndValue(
+                    geometryOf((QAnimatedMainWindowLayout::LayoutAreas) i, adjustedRect, newStretchs));
+        animation->setDuration(m_duration);
+        animation->setEasingCurve(m_easingCurves);
+        animationGroup->addAnimation(animation);
+    }
+    connect(animationGroup, SIGNAL(finished()), this, SLOT(animationFinished()));
+    connect(animationGroup, SIGNAL(finished()), m_public, SIGNAL(animationFinished()));
+    m_animating = true;
+    animationGroup->start(QAbstractAnimation::DeleteWhenStopped);
+
+    // TODO
 }
 
 

@@ -4,8 +4,6 @@
 #include <QObject>
 #include "qanimatedmainwindowlayout.h"
 #include <QEasingCurve>
-#include <QPropertyAnimation>
-#include <QParallelAnimationGroup>
 
 
 class QAnimatedMainWindowLayout;
@@ -45,6 +43,9 @@ public:
     void setDirty();
     bool isDirty() const;
 
+private slots:
+    void animationFinished();
+
 private:
     friend class QAnimatedMainWindowLayout;
     QAnimatedMainWindowLayout * m_public;
@@ -77,8 +78,8 @@ private:
 
     Wrapper * wrapperAt(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper*> list) const;
     QSize calcSize(int * w, int * h, size_t sz) const;
-    QRect geometryOf(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper*> list, const QRect &rect);
-    void setupPropertyAnimation();
+    QRect geometryOf(QAnimatedMainWindowLayout::LayoutAreas area, const QRect &rect, int *stretch);
+    void setupPropertyAnimation(int oldStretch, int newStretch, QAnimatedMainWindowLayout::LayoutAreas area);
 };
 
 #endif // QANIMATEDMAINWINDOWLAYOUT_P_H
