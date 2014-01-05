@@ -37,40 +37,65 @@ void QAnimatedMainWindowLayout::addCenterWidget(QWidget *item)
     m_private->addItem(item, CenterLayoutArea);
 }
 
-void QAnimatedMainWindowLayout::addWidget(QWidget *item, QAnimatedMainWindowLayout::LayoutAreas area)
+void QAnimatedMainWindowLayout::addWidget(
+        QWidget *item, QAnimatedMainWindowLayout::LayoutAreas area)
 {
     m_private->addItem(item, area);
 }
 
 void QAnimatedMainWindowLayout::setLeftStretch(int stretch)
 {
-    m_private->setStrecth(stretch, LeftLayoutArea);
+    m_private->setStrecth((qreal) stretch, LeftLayoutArea);
 }
 
 void QAnimatedMainWindowLayout::setRightStretch(int stretch)
 {
-    m_private->setStrecth(stretch, RightLayoutArea);
+    m_private->setStrecth((qreal) stretch, RightLayoutArea);
 
 }
 
 void QAnimatedMainWindowLayout::setTopStretch(int stretch)
 {
-    m_private->setStrecth(stretch, TopLayoutArea);
+    m_private->setStrecth((qreal) stretch, TopLayoutArea);
 
 }
 
 void QAnimatedMainWindowLayout::setBottomStretch(int stretch)
 {
-    m_private->setStrecth(stretch, BottomLayoutArea);
+    m_private->setStrecth((qreal) stretch, BottomLayoutArea);
 
 }
 
 void QAnimatedMainWindowLayout::setCenterStretch(int stretch)
 {
-    m_private->setStrecth(stretch, CenterLayoutArea);
+    m_private->setStrecth((qreal) stretch, CenterLayoutArea);
 
 }
 
+void QAnimatedMainWindowLayout::setLeftPercentage(qreal stretch)
+{
+    m_private->setStrecth(stretch, LeftLayoutArea);
+}
+
+void QAnimatedMainWindowLayout::setRightPercentage(qreal stretch)
+{
+    m_private->setStrecth(stretch, RightLayoutArea);
+}
+
+void QAnimatedMainWindowLayout::setTopPercentage(qreal stretch)
+{
+    m_private->setStrecth(stretch, TopLayoutArea);
+}
+
+void QAnimatedMainWindowLayout::setBottomPercentage(qreal stretch)
+{
+    m_private->setStrecth(stretch, BottomLayoutArea);
+}
+
+void QAnimatedMainWindowLayout::setCenterPercentage(qreal stretch)
+{
+    m_private->setStrecth(stretch, CenterLayoutArea);
+}
 
 void QAnimatedMainWindowLayout::setSpacing(int space)
 {
@@ -94,27 +119,52 @@ void QAnimatedMainWindowLayout::setEasingCurve(const QEasingCurve &easing)
 
 int QAnimatedMainWindowLayout::leftStretch() const
 {
-    m_private->strecth(LeftLayoutArea);
+    return m_private->strecth(LeftLayoutArea);
 }
 
 int QAnimatedMainWindowLayout::rightStretch() const
 {
-    m_private->strecth(RightLayoutArea);
+    return m_private->strecth(RightLayoutArea);
 }
 
 int QAnimatedMainWindowLayout::topStretch() const
 {
-    m_private->strecth(TopLayoutArea);
+    return m_private->strecth(TopLayoutArea);
 }
 
 int QAnimatedMainWindowLayout::bottomStretch() const
 {
-    m_private->strecth(BottomLayoutArea);
+    return m_private->strecth(BottomLayoutArea);
 }
 
 int QAnimatedMainWindowLayout::centerStretch() const
 {
-    m_private->strecth(CenterLayoutArea);
+    return m_private->strecth(CenterLayoutArea);
+}
+
+qreal QAnimatedMainWindowLayout::leftPercentage() const
+{
+    return m_private->percentage(LeftLayoutArea);
+}
+
+qreal QAnimatedMainWindowLayout::rightPercentage() const
+{
+    return m_private->percentage(RightLayoutArea);
+}
+
+qreal QAnimatedMainWindowLayout::topPercentage() const
+{
+    return m_private->percentage(TopLayoutArea);
+}
+
+qreal QAnimatedMainWindowLayout::bottomPercentage() const
+{
+    return m_private->percentage(BottomLayoutArea);
+}
+
+qreal QAnimatedMainWindowLayout::centerPercentage() const
+{
+    return m_private->percentage(CenterLayoutArea);
 }
 
 int QAnimatedMainWindowLayout::spacing() const
@@ -162,16 +212,15 @@ int QAnimatedMainWindowLayout::count() const
 
 QSize QAnimatedMainWindowLayout::sizeHint() const
 {
-    m_private->sizeHint();
+    return m_private->sizeHint();
 }
 
 QSize QAnimatedMainWindowLayout::minimumSize() const
 {
-    m_private->minimumSize();
+    return m_private->minimumSize();
 }
 
-void QAnimatedMainWindowLayout::setGeometry(
-        const QRect & rect)
+void QAnimatedMainWindowLayout::setGeometry(const QRect & rect)
 {
     if (m_private->isDirty() || rect != geometry()) {
         m_private->setGeometry(rect);

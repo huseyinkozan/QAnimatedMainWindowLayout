@@ -18,9 +18,9 @@ QAnimatedMainWindowLayoutPrivate::QAnimatedMainWindowLayoutPrivate(
     , m_duration(250)
 {
     for (int i = 0; i < QAnimatedMainWindowLayout::LayoutAreasMax; ++i) {
-        m_stretch[i] = 0;
+        m_stretch[i] = 0.0;
     }
-    m_stretch[QAnimatedMainWindowLayout::CenterLayoutArea] = 1;
+    m_stretch[QAnimatedMainWindowLayout::CenterLayoutArea] = 1.0;
 }
 
 QAnimatedMainWindowLayoutPrivate::~QAnimatedMainWindowLayoutPrivate()
@@ -39,10 +39,18 @@ void QAnimatedMainWindowLayoutPrivate::setGeometry(const QRect &rect)
     m_public->getContentsMargins(&lm, &tm, &rm, &bm);
     QRect adjustedRect = rect.adjusted(lm, tm, -rm, -bm);
 
+    int stretchs[QAnimatedMainWindowLayout::LayoutAreasMax];
+    for (int i = 0; i < QAnimatedMainWindowLayout::LayoutAreasMax; ++i) {
+        if (m_stretch[i] < 1.0)
+            stretchs[i] = 0;
+        else
+            stretchs[i] = (int) m_stretch[i];
+    }
+
     for (int i = 0; i < m_list.size(); ++i) {
         Wrapper * wr = m_list.at(i);
         wr->item->setGeometry(
-                    geometryOf(wr->area, adjustedRect, m_stretch));
+                    geometryOf(wr->area, adjustedRect, stretchs, m_stretch));
     }
 }
 
@@ -62,14 +70,16 @@ void QAnimatedMainWindowLayoutPrivate::addItem(
 }
 
 void QAnimatedMainWindowLayoutPrivate::setStrecth(
-        int stretch, QAnimatedMainWindowLayout::LayoutAreas area)
+        qreal stretch, QAnimatedMainWindowLayout::LayoutAreas area)
 {
     if (m_stretch[area] == stretch)
         return;
-    int oldStretch = m_stretch[area];
-    m_stretch[area] = stretch;
+    if (stretch < 0.0)
+        m_stretch[area] = 0.0;
+    else
+        m_stretch[area] = stretch;
     if (m_isAnimationEnabled) {
-        setupPropertyAnimation(oldStretch, stretch, area);
+        setupPropertyAnimation(stretch, area);
         return;
     }
     m_public->invalidate();
@@ -100,7 +110,19 @@ void QAnimatedMainWindowLayoutPrivate::setEasingCurve(const QEasingCurve &easing
 int QAnimatedMainWindowLayoutPrivate::strecth(
         QAnimatedMainWindowLayout::LayoutAreas area) const
 {
-    return m_stretch[area];
+    if (m_stretch[area] < 1.0)
+        return 0;
+    else
+        return (int)m_stretch[area];
+}
+
+qreal QAnimatedMainWindowLayoutPrivate::percentage(
+        QAnimatedMainWindowLayout::LayoutAreas area) const
+{
+    if (m_stretch[area] >= 1.0 || m_stretch[area] < 0)
+        return 0.0;
+    else
+        return m_stretch[area];
 }
 
 int QAnimatedMainWindowLayoutPrivate::spacing() const
@@ -253,7 +275,7 @@ QSize QAnimatedMainWindowLayoutPrivate::calcSize(int *w, int *h, size_t sz) cons
 
 QRect QAnimatedMainWindowLayoutPrivate::geometryOf(
         QAnimatedMainWindowLayout::LayoutAreas area,
-        const QRect & rect, int * stretch)
+        const QRect & rect, int * stretch, qreal * realStretch)
 {
     Wrapper * wr = wrapperAt(area, m_list);
     if (wr == NULL)
@@ -278,8 +300,19 @@ QRect QAnimatedMainWindowLayoutPrivate::geometryOf(
     qreal horizontalPercentage = r.width() / totalHorizontalStretch;
     qreal verticalPercentage = r.height() / totalVerticalStretch;
 
+    int newWidth = horizontalPercentage * stretch[area];
+    int newHeight = verticalPercentage * stretch[area];
+    bool isPercentage = (realStretch[area] > 0 && realStretch[area] < 1.0);
+    if (isPercentage) {
+        newWidth = r.width() * realStretch[area];
+        newHeight = r.height() * realStretch[area];
+    }
+
+    int lm, tm, rm, bm;
+    m_public->getContentsMargins(&lm, &tm, &rm, &bm);
+
     if (area == QAnimatedMainWindowLayout::LeftLayoutArea) {
-        r.setRight(r.left() + (horizontalPercentage * stretch[area]) - m_spacing);
+        r.setRight(r.left() + newWidth - (isPercentage ? 0 : (m_spacing+lm)));
         if (r.width() < minSize.width()) {
             int right = r.x() + r.width();
             r.setWidth(minSize.width());
@@ -287,13 +320,13 @@ QRect QAnimatedMainWindowLayoutPrivate::geometryOf(
         }
     }
     else if (area == QAnimatedMainWindowLayout::RightLayoutArea) {
-        r.setLeft(r.right() - (horizontalPercentage * stretch[area]) + m_spacing);
+        r.setLeft(r.right() - newWidth + (isPercentage ? 0 : (m_spacing+rm)));
         if (r.width() < minSize.width()) {
             r.setWidth(minSize.width());
         }
     }
     else if (area == QAnimatedMainWindowLayout::TopLayoutArea) {
-        r.setBottom(r.top() + (verticalPercentage * stretch[area]) - m_spacing);
+        r.setBottom(r.top() + newHeight - (isPercentage ? 0 : (m_spacing+tm)));
         if (r.height() < minSize.height()) {
             int bottom = r.y() + r.height();
             r.setHeight(minSize.height());
@@ -301,7 +334,7 @@ QRect QAnimatedMainWindowLayoutPrivate::geometryOf(
         }
     }
     else if (area == QAnimatedMainWindowLayout::BottomLayoutArea) {
-        r.setTop(r.bottom() - (verticalPercentage * stretch[area]) + m_spacing);
+        r.setTop(r.bottom() - newHeight + (isPercentage ? 0 : (m_spacing+bm)));
         if (r.height() < minSize.height()) {
             r.setHeight(minSize.height());
         }
@@ -324,19 +357,20 @@ QRect QAnimatedMainWindowLayoutPrivate::geometryOf(
 }
 
 void QAnimatedMainWindowLayoutPrivate::setupPropertyAnimation(
-        int oldStretch, int newStretch, QAnimatedMainWindowLayout::LayoutAreas area)
+        qreal newStretch, QAnimatedMainWindowLayout::LayoutAreas area)
 {
-    if (oldStretch == newStretch)
-        return;
-
-//    int oldStretchs[QAnimatedMainWindowLayout::LayoutAreasMax];
-    int newStretchs[QAnimatedMainWindowLayout::LayoutAreasMax];
+    int stretchs[QAnimatedMainWindowLayout::LayoutAreasMax];
     for (int i = 0; i < QAnimatedMainWindowLayout::LayoutAreasMax; ++i) {
-//        oldStretchs[i] = m_stretch[i];
-        newStretchs[i] = m_stretch[i];
+        if (m_stretch[i] < 1.0)
+            stretchs[i] = 0;
+        else
+            stretchs[i] = (int) m_stretch[i];
     }
-//    oldStretchs[area] = oldStretch;
-    newStretchs[area] = newStretch;
+    if (newStretch < 1.0)
+        stretchs[area] = 0;
+    else
+        stretchs[area] = (int) newStretch;
+
 
     int lm, tm, rm, bm;
     m_public->getContentsMargins(&lm, &tm, &rm, &bm);
@@ -351,7 +385,10 @@ void QAnimatedMainWindowLayoutPrivate::setupPropertyAnimation(
         QWidget * w = wr->item->widget();
         QPropertyAnimation * animation = new QPropertyAnimation(w, "geometry");
         animation->setEndValue(
-                    geometryOf((QAnimatedMainWindowLayout::LayoutAreas) i, adjustedRect, newStretchs));
+                    geometryOf(
+                        (QAnimatedMainWindowLayout::LayoutAreas) i,
+                        adjustedRect, stretchs, m_stretch)
+                    );
         animation->setDuration(m_duration);
         animation->setEasingCurve(m_easingCurves);
         animationGroup->addAnimation(animation);
@@ -360,43 +397,9 @@ void QAnimatedMainWindowLayoutPrivate::setupPropertyAnimation(
     connect(animationGroup, SIGNAL(finished()), m_public, SIGNAL(animationFinished()));
     m_animating = true;
     animationGroup->start(QAbstractAnimation::DeleteWhenStopped);
-
-    // TODO
 }
 
 
-// TODO : delete this
-void show(
-        QAnimatedMainWindowLayout::LayoutAreas area)
-{
-#if 0
-    if ( ! wrapperAt(area, m_list)->isHidden)
-        return;
-    QList<Wrapper*> list;
-    foreach (Wrapper * wr, m_list) {
-        list.append(new Wrapper(wr->item, wr->area, wr->isHidden));
-    }
-    Wrapper * wr = wrapperAt(area, list);
-    wr->isHidden = false;
-
-    int lm, tm, rm, bm;
-    m_public->getContentsMargins(&lm, &tm, &rm, &bm);
-    QRect rect = m_public->geometry();
-    QRect adjustedRect = rect.adjusted(lm, tm, -rm, -bm);
-
-    for (int i = 0; i < m_list.size(); ++i) {
-        Wrapper * wr = m_list.at(i);
-        QRect startRect = geometryOf(wr->area, m_list, adjustedRect);
-        QRect endRect = geometryOf(wr->area, list, adjustedRect);
-        if (startRect != endRect) {
-            // TODO : setup property animation and set geometry properties
-            ;
-        }
-    }
-    while ( ! list.isEmpty())
-        delete list.takeFirst();
-#endif
-}
 
 
 

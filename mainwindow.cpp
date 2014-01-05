@@ -10,11 +10,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     QAnimatedMainWindowLayout * amwl = new QAnimatedMainWindowLayout;
 
-    connect(leftSpinBox, SIGNAL(valueChanged(int)), amwl, SLOT(setLeftStretch(int)));
-    connect(rightSpinBox, SIGNAL(valueChanged(int)), amwl, SLOT(setRightStretch(int)));
-    connect(topSpinBox, SIGNAL(valueChanged(int)), amwl, SLOT(setTopStretch(int)));
-    connect(bottomSpinBox, SIGNAL(valueChanged(int)), amwl, SLOT(setBottomStretch(int)));
-    connect(centerSpinBox, SIGNAL(valueChanged(int)), amwl, SLOT(setCenterStretch(int)));
+
+    connect(leftDoubleSpinBox, SIGNAL(valueChanged(double)), amwl, SLOT(setLeftPercentage(qreal)));
+    connect(rightDoubleSpinBox, SIGNAL(valueChanged(double)), amwl, SLOT(setRightPercentage(qreal)));
+    connect(topDoubleSpinBox, SIGNAL(valueChanged(double)), amwl, SLOT(setTopPercentage(qreal)));
+    connect(bottomDoubleSpinBox, SIGNAL(valueChanged(double)), amwl, SLOT(setBottomPercentage(qreal)));
+    connect(centerDoubleSpinBox, SIGNAL(valueChanged(double)), amwl, SLOT(setCenterPercentage(qreal)));
 
     amwl->addLeftWidget(leftGroupBox);
     amwl->addRightWidget(rightGroupBox);
@@ -25,15 +26,19 @@ MainWindow::MainWindow(QWidget *parent)
     amwl->setEasingCurve(QEasingCurve::OutBack);
     amwl->setAnimationDuration(500);
 
+    // disable animation for initialization
     amwl->setAnimationEnabled(false);
-    amwl->setLeftStretch(leftSpinBox->value());
-    amwl->setRightStretch(rightSpinBox->value());
-    amwl->setTopStretch(topSpinBox->value());
-    amwl->setBottomStretch(bottomSpinBox->value());
-    amwl->setCenterStretch(centerSpinBox->value());
+    amwl->setLeftPercentage(leftDoubleSpinBox->value());
+    amwl->setRightPercentage(rightDoubleSpinBox->value());
+    amwl->setTopPercentage(topDoubleSpinBox->value());
+    amwl->setBottomPercentage(bottomDoubleSpinBox->value());
+    amwl->setCenterPercentage(centerDoubleSpinBox->value());
     amwl->setAnimationEnabled(true);
 
-    centralWidget()->setLayout(amwl);
+    QLayout * fl = frame->layout();
+    if (fl)
+        delete fl;
+    frame->setLayout(amwl);
 }
 
 MainWindow::~MainWindow()

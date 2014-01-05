@@ -10,10 +10,7 @@ class MainWindow : public QMainWindow, public Ui_MainWindow
 
 public:
     explicit MainWindow(QWidget *parent = 0);
-
     ~MainWindow();
-
-protected:
 
 };
 

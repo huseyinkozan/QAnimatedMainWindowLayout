@@ -22,13 +22,14 @@ public:
 
     void addItem(QWidget *widget, QAnimatedMainWindowLayout::LayoutAreas area);
 
-    void setStrecth(int stretch, QAnimatedMainWindowLayout::LayoutAreas area);
+    void setStrecth(qreal stretch, QAnimatedMainWindowLayout::LayoutAreas area);
     void setSpacing(int space);
     void setAnimationEnabled(bool enabled);
     void setAnimationDuration(uint duration);
     void setEasingCurve(const QEasingCurve &easing);
 
     int strecth(QAnimatedMainWindowLayout::LayoutAreas area) const;
+    qreal percentage(QAnimatedMainWindowLayout::LayoutAreas area) const;
     int spacing() const;
     bool isAnimationEnabled() const;
     const QEasingCurve & easingCurve() const;
@@ -67,7 +68,7 @@ private:
     bool m_animating;
     bool m_isAnimationEnabled;
 
-    int m_stretch[QAnimatedMainWindowLayout::LayoutAreasMax];
+    qreal m_stretch[QAnimatedMainWindowLayout::LayoutAreasMax];
 
     int m_spacing;
     uint m_duration;
@@ -76,10 +77,17 @@ private:
     QSize m_hintSizeCache;
     QSize m_minimumSizeCache;
 
-    Wrapper * wrapperAt(QAnimatedMainWindowLayout::LayoutAreas area, QList<Wrapper*> list) const;
+    Wrapper * wrapperAt(
+            QAnimatedMainWindowLayout::LayoutAreas area,
+            QList<Wrapper*> list) const;
     QSize calcSize(int * w, int * h, size_t sz) const;
-    QRect geometryOf(QAnimatedMainWindowLayout::LayoutAreas area, const QRect &rect, int *stretch);
-    void setupPropertyAnimation(int oldStretch, int newStretch, QAnimatedMainWindowLayout::LayoutAreas area);
+    QRect geometryOf(
+            QAnimatedMainWindowLayout::LayoutAreas area,
+            const QRect &rect,
+            int *stretch,
+            qreal *realStretch);
+    void setupPropertyAnimation(
+            qreal newStretch, QAnimatedMainWindowLayout::LayoutAreas area);
 };
 
 #endif // QANIMATEDMAINWINDOWLAYOUT_P_H
